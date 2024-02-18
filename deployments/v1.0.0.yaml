@@ -1,0 +1,25 @@
+schemas:
+  dataset_irene:
+    - schema/dataset_irene.sql
+    #- views/V_AFILIADO.sql
+    #- views/V_EMPLEADOR.sql
+    #- views/V_INTENCIONES.sql
+    #- views/V_IRENE_FEEDBACK_CONVERSACIONES_UNICAS.sql
+    #- views/V_LOG_CONVERSACIONES.sql
+    #- views/V_LOG_CONVERSACIONES_UNICAS.sql
+    #- views/V_LOG_SERVICIO_AFILIADO.sql    
+    #- views/V_LOG_SERVICIO_EMPLEADOR.sql
+    #- views/V_LOG_WATSON_API.sql
+    #- views/V_REPORTE_SESION.sql
+    #- views/V_SESIONES.sql    
+    #- tables/IRENE_API_CALLS.sql
+    #- tables/IRENE_CIERRE_WHATSAPP.sql
+    #- tables/IRENE_CONVERSACIONES.sql
+    - tables/IRENE_FEEDBACK.sql
+    #- procedures/IRENE_TABLES_SP.sql
+scheduled:
+     - display_name: 'SP TABLAS CONSOLIDADAS IRENE'
+       action: create
+       schedule: 'every 120 minutes from 12:40 to 22:40'
+       location: 'us-west1'
+       file: 'IRENE_TABLES_SP.sql'

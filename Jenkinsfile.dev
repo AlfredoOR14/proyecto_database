@@ -1,0 +1,112 @@
+def readYaml() {
+    echo 'Combinando scripts'
+    def data = readYaml(file: "${DEPLOYMENT_PATH}/${DEPLOYMENT_NAME}.yaml")
+    return data
+}
+
+pipeline {
+    agent any
+
+    environment {
+        PROJECT_ID_DESTINATION = 'devioz-pe-dev-analitica'
+        SCHEMA_PATH = 'schemas'
+        SCHEDULED_PATH = 'scheduled'
+        DEPLOYMENT_PATH = 'deployments'
+        DEPLOYMENT_NAME = 'v1.0.0'
+        ENVIRONMENT = 'dev'
+        GCP_SERVICE_ACCOUNT = 'devioz-integra-gcp-devops-jenkins-desa' 
+        GCP_LOCATION = 'us-west1' 
+    }
+    stages {
+        stage('Descarga de Fuentes') {
+            steps {
+                script {
+                    deleteDir()
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Activando Service Account') {
+            steps {
+                withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT}", variable: 'SECRET_FILE')]) {
+                    sh """\$(gcloud auth activate-service-account --key-file=\$SECRET_FILE)"""
+                }
+            }
+        }
+
+        stage('Configurando scripts [SCHEMA]') {
+            steps {
+                script {
+                    def data = readYaml()
+                    schemas = data.schemas
+
+                    schemas.each { schema, value ->
+                        schemas[schema].each { script ->
+                            sh """sed -i -e 's|\${env}|${ENVIRONMENT}|g' -e 's|\${schema_name}|${schema}|g' '${SCHEMA_PATH}/${schema}/${script}'"""
+                            sh """cat  '${SCHEMA_PATH}/${schema}/${script}' >> script.sql"""
+                            sh """echo '\n' >> script.sql"""
+                        }
+                    }
+                }
+            }
+        }
+
+ 
+        stage('Ejecución de Scripts') {
+            steps {
+                script {
+                    sh "bq --location ${GCP_LOCATION} query --dry_run --project_id=${PROJECT_ID_DESTINATION} --use_legacy_sql=false --flagfile=script.sql"
+                    sh "bq --location ${GCP_LOCATION} query --project_id=${PROJECT_ID_DESTINATION} --use_legacy_sql=false --flagfile=script.sql"
+                }
+            }
+        }
+        
+        stage('Creating Scheduled Querys') {
+            steps {
+                script {
+                    def data = readYaml()
+                    scheduled = data.scheduled
+
+                    scheduled.each { value ->
+                        println 'ini'
+                        def display_name = value['display_name']
+                        def action = value['action'] ?: 'create'
+                        def schedule = value['schedule']
+                        def filepath = value['file']
+                        def location = value['location'] ?: 'us'
+                        def test = sh(script: "gcloud config get project")
+
+                        def result = sh(script: " bq --location ${GCP_LOCATION} ls --format=json --project_id=${PROJECT_ID_DESTINATION} --transfer_config --transfer_location=${location} | jq -r '.[] | select(.displayName==\"${display_name}\")' ", returnStdout: true)
+                        def query = sh(script: " tr -s '[:space:]' ' ' < scheduled/${filepath} | sed -e 's/\"/\\\"/g' -e 's|`|\\\\`|g' -e 's|\${env}|${ENVIRONMENT}|g' ", returnStdout: true)
+                        def internal_name = sh(script: " echo '${result}' | jq -r '.name' ", returnStdout: true)
+                        def fake2 = sh(script: " echo env=${env}", returnStdout: true)
+                        println internal_name
+                        println result
+                        println query
+
+                        if (result == null || result.isEmpty()) {
+                            sh """
+                               PARAMS='{\"query\":\"${query}\"}'
+                               echo \$PARAMS
+                               bq --location ${GCP_LOCATION} mk --project_id='${PROJECT_ID_DESTINATION}' --transfer_config --display_name='${display_name}' --location='${location}' --data_source=scheduled_query --schedule='${schedule}' --params=\"{\\\"query\\\":\\\"${query}\\\"}\"
+                               """
+                        } else {
+                            sh """
+                               echo "Executing data transfer configuration update..."
+                               PARAMS='{\"query\":\"${query}\"}'
+                               echo \$PARAMS
+                               bq --location ${GCP_LOCATION} update --project_id=${PROJECT_ID_DESTINATION} --transfer_config --params=\"{\\\"query\\\":\\\"${query}\\\"}\" ${internal_name}
+                               """
+                        }
+                    }
+                }
+            }
+        }
+        stage('Limpiando Workspace') {
+            steps {
+                deleteDir()
+            }
+        }
+    }
+}

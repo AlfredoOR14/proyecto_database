@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS `sura-pe-${env}-analitica.dataset_irene.IRENE_API_CALLS` IF EXISTS;
+
+CREATE TABLE `sura-pe-${env}-analitica.dataset_irene.IRENE_API_CALLS`
+(
+  DIAS STRING,
+  CANTIDAD STRING,
+  PROC_CARGA STRING,
+  PROJ_CARGA STRING,
+  USR_CARGA STRING,
+  FCH_CARGA TIMESTAMP
+);
