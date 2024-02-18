@@ -30,7 +30,7 @@ pipeline {
         stage('Activando Service Account') {
             steps {
                 withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT}", variable: 'SECRET_FILE')]) {
-                    sh """\$(gcloud auth activate-service-account --key-file=\$SECRET_FILE)"""
+                    bat """\$(gcloud auth activate-service-account --key-file=\$SECRET_FILE)"""
                 }
             }
         }
@@ -43,9 +43,9 @@ pipeline {
 
                     schemas.each { schema, value ->
                         schemas[schema].each { script ->
-                            sh """sed -i -e 's|\${env}|${ENVIRONMENT}|g' -e 's|\${schema_name}|${schema}|g' '${SCHEMA_PATH}/${schema}/${script}'"""
-                            sh """cat  '${SCHEMA_PATH}/${schema}/${script}' >> script.sql"""
-                            sh """echo '\n' >> script.sql"""
+                            bat """sed -i -e 's|\${env}|${ENVIRONMENT}|g' -e 's|\${schema_name}|${schema}|g' '${SCHEMA_PATH}/${schema}/${script}'"""
+                            bat """cat  '${SCHEMA_PATH}/${schema}/${script}' >> script.sql"""
+                            bat """echo '\n' >> script.sql"""
                         }
                     }
                 }
@@ -53,11 +53,11 @@ pipeline {
         }
 
  
-        stage('Ejecución de Scripts') {
+        stage('Ejecucion de Scripts') {
             steps {
                 script {
-                    sh "bq --location ${GCP_LOCATION} query --dry_run --project_id=${PROJECT_ID_DESTINATION} --use_legacy_sql=false --flagfile=script.sql"
-                    sh "bq --location ${GCP_LOCATION} query --project_id=${PROJECT_ID_DESTINATION} --use_legacy_sql=false --flagfile=script.sql"
+                    bat "bq --location ${GCP_LOCATION} query --dry_run --project_id=${PROJECT_ID_DESTINATION} --use_legacy_sql=false --flagfile=script.sql"
+                    bat "bq --location ${GCP_LOCATION} query --project_id=${PROJECT_ID_DESTINATION} --use_legacy_sql=false --flagfile=script.sql"
                 }
             }
         }
@@ -86,13 +86,13 @@ pipeline {
                         println query
 
                         if (result == null || result.isEmpty()) {
-                            sh """
+                            bat """
                                PARAMS='{\"query\":\"${query}\"}'
                                echo \$PARAMS
                                bq --location ${GCP_LOCATION} mk --project_id='${PROJECT_ID_DESTINATION}' --transfer_config --display_name='${display_name}' --location='${location}' --data_source=scheduled_query --schedule='${schedule}' --params=\"{\\\"query\\\":\\\"${query}\\\"}\"
                                """
                         } else {
-                            sh """
+                            bat """
                                echo "Executing data transfer configuration update..."
                                PARAMS='{\"query\":\"${query}\"}'
                                echo \$PARAMS
