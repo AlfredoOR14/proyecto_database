@@ -30,7 +30,7 @@ pipeline {
         stage('Activando Service Account') {
             steps {
                 withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT}", variable: 'SECRET_FILE')]) {
-                    bat """\$(gcloud auth activate-service-account --key-file=\$SECRET_FILE)"""
+                    bat """gcloud auth activate-service-account --key-file="%SECRET_FILE%" """
                 }
             }
         }
