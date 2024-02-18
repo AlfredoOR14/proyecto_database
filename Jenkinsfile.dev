@@ -32,15 +32,15 @@ pipeline {
                     // Intentamos cambiar la política de ejecución para el usuario actual
                     try {
                         // Establecemos la política de ejecución Unrestricted para el usuario actual
-                        bat 'Set-ExecutionPolicy Unrestricted -Scope CurrentUser'
+                        bat 'powershell Set-ExecutionPolicy Unrestricted -Scope CurrentUser'
                         echo 'La política de ejecución se ha cambiado correctamente para el usuario actual.'
                     } catch (Exception e) {
                         // Si hay un error, intentamos ejecutar como administrador
                         echo 'Cambiando la política de ejecución como administrador...'
-                        bat 'Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command Set-ExecutionPolicy Unrestricted -Scope CurrentUser"'
+                        bat 'powershell Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command Set-ExecutionPolicy Unrestricted -Scope CurrentUser"'
                         
                         // Verificamos si el cambio se realizó correctamente
-                        bat 'Set-ExecutionPolicy' 
+                        bat 'powershell Set-ExecutionPolicy' 
                     }
                 }
             }
