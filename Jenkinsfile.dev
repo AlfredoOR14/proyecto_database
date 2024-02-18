@@ -16,9 +16,8 @@ pipeline {
         ENVIRONMENT = 'dev'
         GCP_SERVICE_ACCOUNT = 'devioz-integra-gcp-devops-jenkins-desa' 
         GCP_LOCATION = 'us-west1' 
-        GCLOUD_PATH = 'C:\\Users\\anonimo\\AppData\\Local\\Google\\Cloud SDK\\google-cloud-sdk\\bin\\gcloud.cmd'
+        ruta = 'C:\\Users\\anonimo\\OneDrive - Universidad Tecnologica del Peru\\Desktop\\devioz\\proyecto_database'
     }
-
     stages {
         stage('Descarga de Fuentes') {
             steps {
@@ -31,11 +30,17 @@ pipeline {
 
         stage('Activando Service Account') {
             steps {
+                dir(ruta){
                 withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT}", variable: 'SECRET_FILE')]) {
-                    powershell """
-                    & '${GCLOUD_PATH}' auth activate-service-account --key-file='${SECRET_FILE}'
-                    """
+                    bat """ gcloud auth activate-service-account --key-file="%SECRET_FILE%" """
+                    }
                 }
+            }
+        }
+
+        stage('Limpiando Workspace') {
+            steps {
+                deleteDir()
             }
         }
     }
