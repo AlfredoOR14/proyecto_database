@@ -30,17 +30,12 @@ pipeline {
 
         stage('Activando Service Account') {
             steps {
+                script{
                 dir(ruta){
                 withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT}", variable: 'SECRET_FILE')]) {
                     bat """ gcloud auth activate-service-account --key-file="%SECRET_FILE%" """
-                    }
+                    } }
                 }
-            }
-        }
-
-        stage('Limpiando Workspace') {
-            steps {
-                deleteDir()
             }
         }
     }
