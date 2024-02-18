@@ -34,7 +34,7 @@ pipeline {
                 }
             }
         }
-
+/*
         stage('Configurando scripts [SCHEMA]') {
             steps {
                 script {
@@ -108,5 +108,5 @@ pipeline {
                 deleteDir()
             }
         }
-    }
+    }*/
 }
